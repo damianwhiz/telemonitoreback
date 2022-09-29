@@ -4,6 +4,7 @@ const cors=require('cors')
 const session = require('express-session')
 const bodyParser = require('body-parser')  
 const cookieParser= require('cookie-Parser')
+require('dotenv').config()
 const PORT=process.env.PORT || 4000
 app.use(bodyParser.json()) 
 /*
@@ -38,7 +39,7 @@ app.get("/info",(req,res)=>{
         req.session.viewCount+=1
     }
     
-    res.send("api funcionando correctamente xD"+req.session.viewCount)
+    res.send("api funcionando correctamente"+req.session.viewCount)
 })
 
 

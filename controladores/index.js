@@ -647,7 +647,7 @@ const loginOperador= async(req, res)=>{
            
         }
         else{
-          res.send("error en contraseña/login")  
+          res.send("error en contraseña/login")   
         }
       }
       else{
