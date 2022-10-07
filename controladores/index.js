@@ -58,7 +58,7 @@ const newClient=async(req, res)=>{
   try{
   bcrypt.hash(password,saltRounds,async(error,hash)=>{await pool.query('INSERT INTO clients(name,lastname,mail,username,password,dni,whatsapp,id_doctor,id_enfermero) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',[name,lastname,mail,username,hash,dni,whatsapp,id_doctor,id_enfermero])}) 
   
-  res.status(200).send("user created successfully") 
+  res.status(200).send("user created successfully")  
   } 
   catch(err){ 
     console.log(err)
@@ -542,45 +542,105 @@ const whatsapp=async(req, res)=>{
 
 const newhatsapp=async(req, res)=>{
   let message = req.body.Body; 
-  let senderID = req.body.WaId;
-  const count = Number(req.cookies.count) || 0;
-  console.log(count)
-  //res.cookie('count', (count + 1).toString());
-  res.cookie('name',"00000000")
-  console.log(req)
-  /*
-  console.log(req.sessionID)
+  let senderID = req.body.From;
+  let whatsapp=req.body.WaId
+  let fecha = new Date().toISOString().slice(0, 10) 
   
-  if(count==0){
-    console.log('primer toque')
-  }
-  if(count==1){
-    console.log('segudno toque')
-  }
-  if(count==3){
-    console.log('tercer toquee')
-  }
-  if(count==4){
-    res.cookie('count',0)
-  }*/
-  /*if(message=="A" || message=="a" || message=="AA" || message=="aa" || message=="Aa" || message=="aA"){
-    await WA.sendMessage('Video de Tomar  presion arterial en  casa : https:// www.youtube.com/ watch?v=dCjk5ebxE WY&t=10s',senderID)
-    await WA.sendMessage('Para  mantener controlada una  conrrecta presión arterial, es  importante hacer medidas  recurrentes en tu casa. Si cuentas con un tensiometro te  enseñamos a tomar la medida  correctamente.',senderID)
-    await WA.sendMessage('¿Desea hacerlo?',senderID)
+    pool.connect(async(error, client, release)=>{
+    const response=await client.query("SELECT * FROM clients WHERE whatsapp = $1",[whatsapp])
+    let id_paciente=response.rows[0].id
+    const registro=await client.query("SELECT * FROM registros_vitales WHERE id_client = $1",[id_paciente])
+    const flujo_whatsapp=await client.query("SELECT * FROM flujo_whatsapp WHERE date=$1 AND id_whatsapp = $2",[fecha,whatsapp])
     
+    //VERIFICAR SI EL PACIENTE ENVIO VALOR DE PRESION ARTERIAL
+    let valuePA=message.includes('/')
+  if(valuePA){
+    let numerador=message.split('/')[0]
+    let denomidador=message.split('/')[1]
+    if(numerador>120){
+      await WA.sendMessage('Su presión  esta muy alta. Se  recomienda ir a un  establecimiento de  salud.',senderID)
+      await pool.query('UPDATE flujo_whatsapp SET tercer_flujo = $1 WHERE id_whatsapp = $2 AND date= $3',[true,whatsapp,fecha])
+    }
+    if(denomidador>85){
+      await WA.sendMessage('Su presión arterial es alta. Hemos registrado sus datos.\nPuede agendar una cita con su medico',senderID)
+      await pool.query('UPDATE flujo_whatsapp SET tercer_flujo = $1 WHERE id_whatsapp = $2 AND date= $3',[true,whatsapp,fecha])
+    }
+    if(numerador<=120 && denomidador <= 85){
+      await WA.sendMessage('Su presión arterial es normal.\n Buen trabajo.',senderID)
+      await pool.query('UPDATE flujo_whatsapp SET tercer_flujo = $1 WHERE id_whatsapp = $2 AND date= $3',[true,whatsapp,fecha])
+    }
   }
-  if(message=="B" || message=="b" || message=="BB" || message=="bb" || message=="Bb" || message=="bB"){
 
+
+    if(response.rows[0]==0){
+      await WA.sendMessage('Su usuario no se encuentra registrado en nuestra base de datos, por favor pongase en contacto con su doctor',senderID)
+    }
+    else if(response.rows[0]>=0 && response.rows[0].registrado==false){
+      await WA.sendMessage(`Buenos dias ${response.rows[0].name}, por lo visto aun no tienes acceso a nuestro plan de monitoreo, por favor ponte en contacto con tu doctor.`, senderID);
+    }
+    if(flujo_whatsapp.rows.length==0){
+      await WA.sendMessage(' Hola, Te damos la bienvenida al servicio de Telemonitoreo de Estar Vital.\nMediante este chat podremos acompañarte en el seguimiento de tus sintomas y otros indicadores de tu salud', senderID);
+      await WA.sendMessage(' Antes que empecemos a contarte como funciona el servicio queremos decirte algo muy importante.\nLa información que brindarás por  este chat es completamente  confidencial y solo tu médico  tratante y el personal de salud de  Estar Vital podrá acceder a ello. De  esta manera estaremos más  pendientes de tu salud.', senderID);
+      await WA.sendMessage('Te enviaremos un video  introducción para contarte como  es el servicio, espero lo disfrutes.',senderID)
+      await WA.sendMessage('http://www.youtube.com/watch?v=k35M-Rlrlxw',senderID)
+      await WA.sendMessage(' Te estaremos enviado  mensaje de vez en cuando para  saber como va tu salud.\n ¿Deseas hacer algo ahora? Te  damos estas opciones: \n a) Quiero saber como tomarme la  presión arterial.\n b) Quiero reportar la medida de mi  Presión Arterial.\n c) Quiero reportar un síntoma.',senderID)
+      await pool.query('INSERT INTO flujo_whatsapp(primer_flujo,id_whatsapp) VALUES ($1,$2)',[true,whatsapp])
+    }  
+    if(flujo_whatsapp.rows.length>0 && message!="a" && message!="A" && message!="b" && message!="B" && message!="c" && message!="C" && valuePA==false){
+      await WA.sendMessage('Por favor, seleccione una de las siguientes opciones: \n a) Quiero saber como tomarme la  presión arterial.\n b) Quiero reportar la medida de mi  Presión Arterial.\n c) Quiero reportar un síntoma.',senderID)
+      await pool.query('UPDATE flujo_whatsapp SET segundo_flujo = $1 WHERE id_whatsapp = $2 AND date= $3',[true,whatsapp,fecha])
+    }
+ 
+  
+    if(message=="A" || message=="a" || message=="AA" || message=="aa" || message=="Aa" || message=="aA"){
+      await WA.sendMessage('Video de Tomar  presion arterial en  casa:',senderID)
+      await WA.sendMessage('https://www.youtube.com/watch?v=dCjk5ebxEWY&t=10s',senderID)
+      await WA.sendMessage('b) Quiero reportar la medida de mi Presión Arterial.\nc) Quiero reportar un síntoma.',senderID)
+      
+    }
+
+  })
+  
+  
+    
+  if(message=="B" || message=="b" || message=="BB" || message=="bb" || message=="Bb" || message=="bB"){
+    await WA.sendMessage('¿Cuanto fue tu presión anterial?  recuerda que debes escribirlo en  fracción (ej: 120/70)',senderID)
   }
   if(message=="C" || message=="c" || message=="CC" || message=="cc" || message=="Cc" || message=="cC"){
     await WA.sendMessage('Escribe la letra de estas ocpiones\n(selecciona 1)\n1) Dolor de Cabeza\n2) Sensación de falta de aire\n3) Dolor en el pecho\n4) Dolor en el brazo izquierdo\n5) Mareos',senderID)
-  }
-  await WA.sendMessage(' Hola, Te damos la bienvenida al servicio de Telemonitoreo de Estar Vital.\nMediante este chat podremos acompañarte en el seguimiento de tus sintomas y otros indicadores de tu salud', senderID);
-  await WA.sendMessage(' Antes que empecemos a contarte como funciona el servicio queremos decirte algo muy importante.\nLa información que brindarás por  este chat es completamente  confidencial y solo tu médico  tratante y el personal de salud de  Estar Vital podrá acceder a ello. De  esta manera estaremos más  pendientes de tu salud.', senderID);
-  await WA.sendMessage('Te enviaremos un video  introducción para contarte como  es el servicio, espero lo disfrutes.',senderID)
-  await WA.sendMessage('http://www.youtube.com/watch?v=k35M-Rlrlxw',senderID)
-  await WA.sendMessage(' Te estaremos enviado  mensaje de vez en cuando para  saber como va tu salud.\n ¿Deseas hacer algo ahora? Te  damos estas opciones: \n a) Quiero saber como tomarme la  presión arterial.\n b) Quiero reportar la medida de mi  Presión Arterial.\n c) Quiero reportar un síntoma.',senderID)
-  await WA.sendMessage('',senderID) */
+    if(message=="a"){
+      await pool.query('INSERT INTO sintomas_paciente(id_sintoma,id_paciente) VALUES ($1,$2)',["Dolor de cabeza",senderID])
+      await WA.sendMessage('Estamos reportando a la central de Estar Vital',senderID)
+      await WA.sendMessage('¿Otro síntoma?',senderID)
+    }
+    else if(message=="b"){
+      await pool.query('INSERT INTO sintomas_paciente(id_sintoma,id_paciente) VALUES ($1,$2)',["Sensación de falta de aire",senderID])
+      await WA.sendMessage('Estamos reportando a la central de Estar Vital',senderID)
+      await WA.sendMessage('¿Otro síntoma?',senderID)
+    }
+    else if(message=="c"){
+      await pool.query('INSERT INTO sintomas_paciente(id_sintoma,id_paciente) VALUES ($1,$2)',["Dolor en el pecho",senderID])
+      await WA.sendMessage('Estamos reportando a la central de Estar Vital',senderID)
+      await WA.sendMessage('¿Otro síntoma?',senderID)
+    }
+    else if(message=="d"){
+      await pool.query('INSERT INTO sintomas_paciente(id_sintoma,id_paciente) VALUES ($1,$2)',["Dolor en el brazo izquierdo",senderID])
+      await WA.sendMessage('Estamos reportando a la central de Estar Vital',senderID)
+      await WA.sendMessage('¿Otro síntoma?',senderID)
+    }
+    else if(message=="d"){
+      await pool.query('INSERT INTO sintomas_paciente(id_sintoma,id_paciente) VALUES ($1,$2)',["Mareos",senderID])
+      await WA.sendMessage('Estamos reportando a la central de Estar Vital',senderID)
+      await WA.sendMessage('¿Otro síntoma?',senderID)
+    }
+    else{
+      await WA.sendMessage('Por favor escriba un valor válido',senderID)
+    }
+
+    }
+  
+
+
 }
 
 
@@ -911,6 +971,21 @@ const editIndicador= async(req, res)=>{
  
 }
 
+const addIndicators=async(req, res)=>{
+  for(let i=0; i<req.body.length; i++){
+    const {id_client,temperatura,presion_arterial,frecuencia_respiratoria,frecuencia_cardiaca,saturacion_oxigeno,peso,imc,grasa_corporal,perimetro_abdominal,reaccion_orina,beg,reg,meg,estilo_vida,signos,estado_general}=req.body[i]
+    console.log(id_client)
+    try{
+      await pool.query('INSERT INTO registros_vitales(temperatura,presion_arterial,frecuencia_respiratoria,frecuencia_cardiaca,saturacion_oxigeno,peso,imc,grasa_corporal,perimetro_abdominal,reaccion_orina,beg,reg,meg,estilo_vida,signos,id_client,estado_general) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)',[temperatura,presion_arterial,frecuencia_respiratoria,frecuencia_cardiaca,saturacion_oxigeno,peso,imc,grasa_corporal,perimetro_abdominal,reaccion_orina,beg,reg,meg,estilo_vida,signos,id_client,estado_general])
+      
+      res.status(200).send("datos cargados exitosamente")  
+      } 
+      catch(err){ 
+        console.log(err)      
+      } 
+  }
+
+}
 //SELECT * FROM clients INNER join estado on clients.phone = estado.whatsapp;
 
 const testear=async(req,res)=>{
@@ -935,4 +1010,4 @@ const testear=async(req,res)=>{
   }
 
 
-module.exports ={testear, verificarToken,getClients,newClient,getUserById,deleteUserById,updateUserById,loginUser,infoClients,loginAdmin,newNurse,loginNurse,infoNurse,updateInfo,getNurses,getDoctors,newDoctor,loginDoctor,infoDoctor,whatsapp,mail,loginOperador,updateOperadorInfo,infoOperador,newCuidador,infoPacienteCuidador,infoClientsTotal,getIndicadores,newIndicador,getSintomas,newSintoma,registrarPacientePlanMonitoreo,editIndicador,newhatsapp}
+module.exports ={testear, verificarToken,getClients,newClient,getUserById,deleteUserById,updateUserById,loginUser,infoClients,loginAdmin,newNurse,loginNurse,infoNurse,updateInfo,getNurses,getDoctors,newDoctor,loginDoctor,infoDoctor,whatsapp,mail,loginOperador,updateOperadorInfo,infoOperador,newCuidador,infoPacienteCuidador,infoClientsTotal,getIndicadores,newIndicador,getSintomas,newSintoma,registrarPacientePlanMonitoreo,editIndicador,newhatsapp,addIndicators}

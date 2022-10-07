@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-const {testear,verificarToken,getClients,newClient,getUserById,deleteUserById,updateUserById,loginUser,infoClients,loginAdmin,newNurse,loginNurse,infoNurse,updateInfo,getNurses,getDoctors,newDoctor,loginDoctor,infoDoctor,whatsapp,mail,loginOperador,updateOperadorInfo,infoOperador,newCuidador,infoPacienteCuidador,infoClientsTotal,getIndicadores,newIndicador,getSintomas,newSintoma,registrarPacientePlanMonitoreo,editIndicador,newhatsapp} =require('../controladores')
+const {testear,verificarToken,getClients,newClient,getUserById,deleteUserById,updateUserById,loginUser,infoClients,loginAdmin,newNurse,loginNurse,infoNurse,updateInfo,getNurses,getDoctors,newDoctor,loginDoctor,infoDoctor,whatsapp,mail,loginOperador,updateOperadorInfo,infoOperador,newCuidador,infoPacienteCuidador,infoClientsTotal,getIndicadores,newIndicador,getSintomas,newSintoma,registrarPacientePlanMonitoreo,editIndicador,newhatsapp,addIndicators} =require('../controladores')
 
 router.get("/test",testear)  
 
@@ -14,7 +14,7 @@ router.put("/all/:id",updateUserById)
 router.post("/login",loginUser)
 router.get("/info-clients/:whatsapp",infoClients)
 router.get("/info-clients-total",infoClientsTotal)
-
+router.post("/add-indicadors",addIndicators)
 //NURSES
 router.post("/login-nurse",loginNurse)
 router.post("/register-nurse",newNurse)    
