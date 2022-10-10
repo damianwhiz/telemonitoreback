@@ -29,7 +29,20 @@ app.use(cookieParser())
 app.use(express.urlencoded({ extended:true })) 
 app.use(require('./routes/index'))
 
-app.listen(PORT, function(){console.log('listening on port '+PORT)})
+const Pool = require('pg').Pool
+const pool = new Pool({
+  user: 'postgres',
+  host: 'localhost',
+  database: 'testa',
+  password: '1234',
+  port: 5432,
+  max:50
+})
+
+app.listen(PORT, function(){
+    console.log('listening on port '+PORT)
+    
+})  
 
 app.get("/info",(req,res)=>{
     if(!req.session.viewCount){
