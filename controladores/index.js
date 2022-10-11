@@ -124,12 +124,12 @@ catch(err){
   
 }
 const infoClients =async(req, res)=>{
-    const whatsapp=req.params.whatsapp
+    const id=req.params.id
     try{
       pool.connect(async(error, client, release)=>{
        const infoUsuario=[]
-       const registros=await client.query("SELECT * FROM registers WHERE whatsapp=$1",[whatsapp]).then(e=>{return e.rows})
-       const cliente=await client.query("SELECT * FROM clients WHERE whatsapp=$1",[whatsapp]).then(e=>{return (
+       const registros=await client.query("SELECT * FROM registros_vitales WHERE id_client=$1",[id]).then(e=>{return e.rows})
+       const cliente=await client.query("SELECT * FROM clients WHERE id=$1",[id]).then(e=>{return (
         {
         name:e.rows[0].name,
         lastname:e.rows[0].lastname,
@@ -574,14 +574,14 @@ const newhatsapp=async(req, res)=>{
     }
   }
 
-
+  
     if(response.rows[0]==0){
       await WA.sendMessage('Su usuario no se encuentra registrado en nuestra base de datos, por favor pongase en contacto con su doctor',senderID)
     }
     else if(response.rows[0]>=0 && response.rows[0].registrado==false){
       await WA.sendMessage(`Buenos dias ${response.rows[0].name}, por lo visto aun no tienes acceso a nuestro plan de monitoreo, por favor ponte en contacto con tu doctor.`, senderID);
-    }
-    if(flujo_whatsapp.rows.length==0){
+    } 
+    if(flujo_whatsapp.rows.length==0){ 
       await WA.sendMessage('Hola, Te damos la bienvenida al servicio de Telemonitoreo de Estar Vital.\nMediante este chat podremos acompañarte en el seguimiento de tus sintomas y otros indicadores de tu salud', senderID);
       await WA.sendMessage('Antes que empecemos a contarte como funciona el servicio queremos decirte algo muy importante.\nLa información que brindarás por  este chat es completamente  confidencial y solo tu médico  tratante y el personal de salud de  Estar Vital podrá acceder a ello. De  esta manera estaremos más  pendientes de tu salud.', senderID);
       await WA.sendMessage('Te enviaremos un video  introducción para contarte como  es el servicio, espero lo disfrutes.',senderID)
@@ -854,7 +854,7 @@ const infoClientsTotal=async(req, res)=>{
      if(signosVitales.rows.length>0){
       var data=[]
       for(let j = 0; j < signosVitales.rows.length; j++){
-        let fecha=signosVitales.rows[j].date.toString()
+        let fecha=signosVitales.rows[j].date.toString() 
         let date=fecha.slice(0,15)
         var registroindividual={
         temperatura:Number(signosVitales.rows[j].temperatura),
@@ -870,6 +870,7 @@ const infoClientsTotal=async(req, res)=>{
         beg:Number(signosVitales.rows[j].beg),
         reg:Number(signosVitales.rows[j].reg), 
         meg:Number(signosVitales.rows[j].meg), 
+        estado_general:Number(signosVitales.rows[j].estado_general),  
         date:date  
       }
       data.push(registroindividual)
@@ -965,14 +966,14 @@ const registrarPacientePlanMonitoreo=async(req, res)=>{
   const idPaciente=req.body.idCliente 
   const enfermedad=req.body.enfermedad
   
-  
+  console.log(idPaciente+enfermedad) 
   try{
     await pool.query('UPDATE clients SET registrado=$1,enfermedad=$2 WHERE id=$3',[true,enfermedad,idPaciente])
     console.log("registrado")
     res.status(200).send("user registered successfully") 
     } 
     catch(err){ 
-      console.log(err)
+      console.log(err) 
     } 
     
 }

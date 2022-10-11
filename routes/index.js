@@ -12,7 +12,7 @@ router.get("/all/:id",verificarToken,getUserById)
 router.delete("/all/:id",verificarToken,deleteUserById)
 router.put("/all/:id",updateUserById)
 router.post("/login",loginUser)
-router.get("/info-clients/:whatsapp",infoClients)
+router.get("/info-clients/:id",infoClients)
 router.get("/info-clients-total",infoClientsTotal)
 router.post("/add-indicadors",addIndicators)
 //NURSES
