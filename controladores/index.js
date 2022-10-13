@@ -688,23 +688,7 @@ const mail= async(req, res)=>{
 
 
 
-    var mailOptions = {
-      from: '"Nombre empresa" <damian.duran@webleadsgroup.com>', // sender address
-      to: `${mail}`, // sender addresslist of receivers
-      subject: "Tu informe semanal!", // Subject line
-       // plain text body
-      html: `<h4>Buenos dias: ${name} ${lastname}<br>
-      Mail de contacto: ${mail}<br>
-      Mensaje:</h4><br><br><br>
-      <h3> Nos comunicamos con usted para enviarle su informe semanal para que pueda hacer un seguimiento de sus datos ingresados esta semana.
-      Usted ha informado que ${pills} ha tomado sus pastillas, que ${head} ha tenido dolor de cabeza durante la semana,
-      que sus signos vitales han sido de ${vital_sign}, que se ha sentido en un promedio general de ${general}.
-      Adicionalente ${item}</h3>
-      <p>Que tenga una excelenta semana. Recuerde que puede ver sus registros dando click en el siguiente enlace:
-      www.loginempreesa.com`,
-      // html bod
-       
-    }
+   
     
      
     transporter.sendMail(mailOptions,(error,info) => { 

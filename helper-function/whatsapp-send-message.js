@@ -1,5 +1,5 @@
 var accountSid = "AC1b0050d6037932a1340f98283f4cbef5"; // Your Account SID from www.twilio.com/console
-var authToken = "a821ed81a5fba3c64998b70239788a74";   // Your Auth Token from www.twilio.com/console
+var authToken = "774b82f26026f9393d02a496d8052f17";   // Your Auth Token from www.twilio.com/console
  
 const client = require('twilio')(accountSid, authToken, { 
     lazyLoading: true 
@@ -17,7 +17,7 @@ const sendMessage = async (message, senderID) => {
     } catch (error) {
         console.log(`Error at sendMessage --> ${error}`);
     }
-};
+}; 
 
 module.exports = {
     sendMessage
